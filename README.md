@@ -6,8 +6,9 @@ Developed by **ecnord** ([NoxelEcnord](https://github.com/NoxelEcnord)).
 
 ## Features
 
-Switch seamlessly between four modes:
-*   **Mac**: A clean macOS Big Sur-like Dark theme.
+Switch seamlessly between five robust modes (including light/dark variants):
+*   **Mac**: macOS styling (Light/Dark) with Plank dock included.
+*   **Windows**: Windows 11 Fluent styling (Light/Dark) with dynamic bottom panel.
 *   **Athena**: A cyberpunk/Sweet theme inspired by Athena OS.
 *   **Arch**: A flat Arc-Dark theme with Papirus icons.
 *   **Kali**: Revert to the default Kali Dark cool setup.
@@ -32,7 +33,8 @@ sudo cp kali-skin /usr/local/bin/
 
 2. **Switching Modes:**
    ```bash
-   kali-skin mac
+   kali-skin mac dark
+   kali-skin win light
    kali-skin athena
    kali-skin arch
    kali-skin kali

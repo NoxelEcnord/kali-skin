@@ -1,38 +1,37 @@
 #!/bin/bash
-# kali-skin - A script to switch between 4 different desktop themes on XFCE (Kali Linux)
+# kali-skin v2.0 - Advanced OS Transformer for Kali Linux 2026 (XFCE)
 # Developer: ecnord (GitHub: NoxelEcnord)
 
 MODE=$1
+VARIANT=$2
 
 show_help() {
-    echo -e "\e[1;36mKali-Skin Theme Switcher\e[0m"
-    echo "Usage: kali-skin [mode]"
+    echo -e "\e[1;36mKali-Skin Theme Switcher v2.0\e[0m"
+    echo "Usage: kali-skin [mode] [variant]"
     echo ""
     echo "Modes:"
-    echo "  mac      - macOS style theme"
-    echo "  athena   - Athena OS style theme (Cyberpunk)"
-    echo "  arch     - Arch Linux style theme"
-    echo "  kali     - Default Kali Linux cool setup"
-    echo "  setup    - Install all necessary themes (run this first!)"
+    echo "  mac [dark|light] - macOS style (includes Plank dock)"
+    echo "  win [dark|light] - Windows 11 style (Panel at bottom)"
+    echo "  athena           - Athena OS style (Cyberpunk)"
+    echo "  arch             - Arch Linux style"
+    echo "  kali             - Default Kali Linux setup"
+    echo "  setup            - Install all themes, docks, and fonts (Run first!)"
     echo ""
 }
 
 setup_themes() {
-    echo -e "\e[1;34m[*] Setting up themes. This will download files from github and debian repos...\e[0m"
+    echo -e "\e[1;34m[*] Setting up themes, icons, and docks...\e[0m"
     mkdir -p ~/.themes ~/.icons ~/.wallpapers
     
-    # Install Arch theme from repos (no custom repos)
-    if ! dpkg -l | grep -q arc-theme; then
-        echo "Installing Arc theme and Papirus icons from default repos. This might ask for sudo password."
-        sudo apt-get update && sudo apt-get install -y arc-theme papirus-icon-theme
-    fi
+    echo "Installing required system packages (plank, arc-theme, etc.)..."
+    sudo apt-get update && sudo apt-get install -y arc-theme papirus-icon-theme plank curl git tar unzip
 
     # Mac Theme (WhiteSur)
     if [ ! -d "$HOME/.themes/WhiteSur-Dark" ]; then
         echo -e "\e[1;32m[+] Downloading WhiteSur Mac Theme...\e[0m"
         rm -rf /tmp/WhiteSur-gtk-theme
         git clone --depth 1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/WhiteSur-gtk-theme
-        /tmp/WhiteSur-gtk-theme/install.sh -d ~/.themes -c Dark -t all -N glassy
+        /tmp/WhiteSur-gtk-theme/install.sh -d ~/.themes -t all -N glassy
         rm -rf /tmp/WhiteSur-gtk-theme
     fi
     if [ ! -d "$HOME/.icons/WhiteSur-dark" ]; then
@@ -43,54 +42,84 @@ setup_themes() {
         rm -rf /tmp/WhiteSur-icon-theme
     fi
 
+    # Windows 11 Theme (Fluent)
+    if [ ! -d "$HOME/.themes/Fluent-Dark" ]; then
+        echo -e "\e[1;32m[+] Downloading Windows 11 Fluent Theme...\e[0m"
+        rm -rf /tmp/Fluent-gtk-theme
+        git clone --depth 1 https://github.com/vinceliuice/Fluent-gtk-theme.git /tmp/Fluent-gtk-theme
+        /tmp/Fluent-gtk-theme/install.sh -d ~/.themes --tweaks solid
+        rm -rf /tmp/Fluent-gtk-theme
+    fi
+    if [ ! -d "$HOME/.icons/Fluent-dark" ]; then
+        echo -e "\e[1;32m[+] Downloading Windows 11 Fluent Icons...\e[0m"
+        rm -rf /tmp/Fluent-icon-theme
+        git clone --depth 1 https://github.com/vinceliuice/Fluent-icon-theme.git /tmp/Fluent-icon-theme
+        /tmp/Fluent-icon-theme/install.sh -d ~/.icons
+        rm -rf /tmp/Fluent-icon-theme
+    fi
+
     # Athena Theme (Sweet-Dark / Candy-icons)
     if [ ! -d "$HOME/.themes/Sweet-Dark" ]; then
-        echo -e "\e[1;32m[+] Downloading Sweet Theme for Athena look...\e[0m"
-        wget -qO /tmp/sweet.tar.xz "https://github.com/EliverLara/Sweet/releases/download/v4.0/Sweet-Dark.tar.xz"
-        tar -xf /tmp/sweet.tar.xz -C ~/.themes/
-        rm /tmp/sweet.tar.xz
+        echo -e "\e[1;32m[+] Downloading Sweet Theme for Athena...\e[0m"
+        curl -sL "https://github.com/EliverLara/Sweet/releases/download/v4.0/Sweet-Dark.tar.xz" | tar -xJ -C ~/.themes/
     fi
     if [ ! -d "$HOME/.icons/candy-icons" ]; then
-        echo -e "\e[1;32m[+] Downloading Candy Icons for Athena look...\e[0m"
+        echo -e "\e[1;32m[+] Downloading Candy Icons...\e[0m"
         git clone --depth 1 https://github.com/EliverLara/candy-icons.git ~/.icons/candy-icons
     fi
 
     # Wallpapers
     echo -e "\e[1;32m[+] Downloading Wallpapers...\e[0m"
-    wget -qO ~/.wallpapers/mac.jpg "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=1920&auto=format&fit=crop" || true
-    wget -qO ~/.wallpapers/athena.jpg "https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=1920&auto=format&fit=crop" || true
-    wget -qO ~/.wallpapers/arch.png "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Arch_Linux_%28dark_background%29.svg/1920px-Arch_Linux_%28dark_background%29.svg.png" || true
+    curl -sL -o ~/.wallpapers/mac.jpg "https://images.unsplash.com/photo-1610312278520-bcc893a3ff1d?q=80&w=1920&auto=format&fit=crop" || true
+    curl -sL -o ~/.wallpapers/win11.jpg "https://images.unsplash.com/photo-1662955938837-1234190c7414?q=80&w=1920&auto=format&fit=crop" || true
+    curl -sL -o ~/.wallpapers/athena.jpg "https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=1920&auto=format&fit=crop" || true
+    curl -sL -o ~/.wallpapers/arch.png "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Arch_Linux_%28dark_background%29.svg/1920px-Arch_Linux_%28dark_background%29.svg.png" || true
 
-    echo -e "\e[1;32m[!] Setup complete! You can now run 'kali-skin mac' or 'kali-skin athena' etc.\e[0m"
+    echo -e "\e[1;32m[!] Setup complete! You can now run 'kali-skin win' or 'kali-skin mac' etc.\e[0m"
 }
 
-apply_xfce_theme() {
+apply_xfce() {
     local gtk_theme=$1
     local icon_theme=$2
     local wm_theme=$3
     local wallpaper=$4
     local qterm_color=$5
-    
-    # Check if tools exist (like user is on XFCE)
+    local panel_pos=$6
+    local use_plank=$7
+
     if command -v xfconf-query &> /dev/null; then
-        # Ensure properties exist before setting, or create them
         xfconf-query -c xsettings -p /Net/ThemeName -s "$gtk_theme" 2>/dev/null || xfconf-query -c xsettings -p /Net/ThemeName -n -t string -s "$gtk_theme"
         xfconf-query -c xsettings -p /Net/IconThemeName -s "$icon_theme" 2>/dev/null || xfconf-query -c xsettings -p /Net/IconThemeName -n -t string -s "$icon_theme"
         xfconf-query -c xfwm4 -p /general/theme -s "$wm_theme" 2>/dev/null || xfconf-query -c xfwm4 -p /general/theme -n -t string -s "$wm_theme"
         
-        # Apply wallpaper
         for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep "last-image"); do
             xfconf-query -c xfce4-desktop -p "$p" -s "$wallpaper" 2>/dev/null
         done
+
+        # Move panel
+        if [ "$panel_pos" == "top" ]; then
+            xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=8;x=0;y=0" 2>/dev/null
+        elif [ "$panel_pos" == "bottom" ]; then
+            xfconf-query -c xfce4-panel -p /panels/panel-1/position -s "p=10;x=0;y=0" 2>/dev/null
+        fi
     fi
 
-    # Terminal themes (QTerminal/XFCE4-Terminal)
+    # Terminal themes (QTerminal)
     if [ -f "$HOME/.config/qterminal.org/qterminal.ini" ] && [ -n "$qterm_color" ]; then
         if grep -q "colorScheme=" "$HOME/.config/qterminal.org/qterminal.ini"; then
             sed -i "s/colorScheme=.*/colorScheme=$qterm_color/g" "$HOME/.config/qterminal.org/qterminal.ini"
         else
             sed -i "/\[General\]/a colorScheme=$qterm_color" "$HOME/.config/qterminal.org/qterminal.ini"
         fi
+    fi
+
+    # Plank
+    if [ "$use_plank" == "yes" ]; then
+        if ! pgrep-v -q "plank"; then
+            plank &disown > /dev/null 2>&1
+        fi
+    else
+        killall plank 2>/dev/null || true
     fi
 }
 
@@ -99,26 +128,35 @@ case "$MODE" in
         setup_themes
         ;;
     mac)
-        echo "Applying macOS Theme..."
-        apply_xfce_theme "WhiteSur-Dark" "WhiteSur-dark" "WhiteSur-Dark" "$HOME/.wallpapers/mac.jpg" "WhiteOnBlacl"
-        echo "Done! You may want to log out and log back in for full effects."
+        GTK="WhiteSur-Dark" && ICO="WhiteSur-dark"
+        if [ "$VARIANT" == "--light" ] || [ "$VARIANT" == "light" ]; then GTK="WhiteSur-Light" && ICO="WhiteSur"; fi
+        echo "Applying macOS Theme ($GTK)..."
+        apply_xfce "$GTK" "$ICO" "$GTK" "$HOME/.wallpapers/mac.jpg" "WhiteOnBlack" "top" "yes"
+        echo "Done!"
+        ;;
+    win)
+        GTK="Fluent-Dark" && ICO="Fluent-dark"
+        if [ "$VARIANT" == "--light" ] || [ "$VARIANT" == "light" ]; then GTK="Fluent-Light" && ICO="Fluent"; fi
+        echo "Applying Windows 11 Theme ($GTK)..."
+        apply_xfce "$GTK" "$ICO" "$GTK" "$HOME/.wallpapers/win11.jpg" "WhiteOnBlack" "bottom" "no"
+        echo "Done!"
         ;;
     athena)
         echo "Applying Athena OS Theme..."
-        apply_xfce_theme "Sweet-Dark" "candy-icons" "Sweet-Dark" "$HOME/.wallpapers/athena.jpg" "GreenOnBlack"
-        echo "Done! You may want to log out and log back in for full effects."
+        apply_xfce "Sweet-Dark" "candy-icons" "Sweet-Dark" "$HOME/.wallpapers/athena.jpg" "GreenOnBlack" "top" "no"
+        echo "Done!"
         ;;
     arch)
         echo "Applying Arch Linux Theme..."
-        apply_xfce_theme "Arc-Dark" "Papirus-Dark" "Arc-Dark" "$HOME/.wallpapers/arch.png" "SolarizedDark"
-        echo "Done! You may want to log out and log back in for full effects."
+        apply_xfce "Arc-Dark" "Papirus-Dark" "Arc-Dark" "$HOME/.wallpapers/arch.png" "SolarizedDark" "top" "no"
+        echo "Done!"
         ;;
     kali)
         echo "Applying default Kali Theme..."
-        KALI_BG=$(find /usr/share/backgrounds/kali -type f -name '*default*' | head -n 1)
+        KALI_BG=$(find /usr/share/backgrounds/kali -type f -name '*default*' | head -n 1 2>/dev/null)
         if [ -z "$KALI_BG" ]; then KALI_BG="/usr/share/backgrounds/kali-16x9/default"; fi
-        apply_xfce_theme "Kali-Dark" "Flat-Remix-Blue-Dark" "Kali-Dark" "$KALI_BG" "Kali"
-        echo "Done! You may want to log out and log back in for full effects."
+        apply_xfce "Kali-Dark" "Flat-Remix-Blue-Dark" "Kali-Dark" "$KALI_BG" "Øali" "top" "no"
+        echo "Done!"
         ;;
     *)
         show_help
