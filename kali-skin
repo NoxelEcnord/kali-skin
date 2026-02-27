@@ -23,8 +23,8 @@ setup_themes() {
     echo -e "\e[1;34m[*] Setting up themes, icons, and docks...\e[0m"
     mkdir -p ~/.themes ~/.icons ~/.wallpapers
     
-    echo "Installing required system packages (plank, arc-theme, neofetch, etc.)..."
-    sudo apt-get update && sudo apt-get install -y arc-theme papirus-icon-theme plank curl git tar unzip neofetch
+    echo "Installing required system packages (plank, arc-theme, neofetch, nautilus, etc.)..."
+    sudo apt-get update && sudo apt-get install -y arc-theme papirus-icon-theme plank curl git tar unzip neofetch nautilus
 
     # Mac Theme (WhiteSur)
     if [ ! -d "$HOME/.themes/WhiteSur-Dark" ]; then
@@ -75,6 +75,9 @@ setup_themes() {
     curl -sL -o ~/.wallpapers/athena.jpg "https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=1920&auto=format&fit=crop" || true
     curl -sL -o ~/.wallpapers/arch.png "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1920&auto=format&fit=crop" || true
 
+    # Set Nautilus as default file manager
+    xdg-mime default org.gnome.Nautilus.desktop inode/directory
+
     echo -e "\e[1;32m[!] Setup complete! You can now run 'kali-skin win' or 'kali-skin mac' etc.\e[0m"
 }
 
@@ -92,26 +95,36 @@ apply_shell() {
 
     if [ "$os" == "mac" ]; then
         zsh_content="PROMPT=\" %B%F{green}%n@macbook%f%b:%B%F{blue}%~%f%b $ \"\nclear\nneofetch --ascii_distro Mac"
-        bash_content="PS1='\\[\e[01;32m\\]\u@macbook\\\[\e[00m\]:\\[\e[01;34m\\]\w\\\[\e[00m\] $ '\nclear\nneofetch --ascii_distro Mac"
+        bash_content="PS1='\[\e[01;32m\]\u@macbook\[\e[00m\]:\[\e[01;34m\]\w\[\e[00m\] $ '\nclear\nneofetch --ascii_distro Mac"
     elif [ "$os" == "win" ]; then
-        zsh_content="PROMPT=\" %B%F{green}PS C:\\\\Users\\%n>%f%b \"\nclear\nneofetch --ascii_distro Windows11"
-        bash_content="PS1='\\[\e[01;32m\\]PS C:\\\\Users\\\\\u>\\\[\e[00m\] '\nclear\nneofetch --ascii_distro Windows11"
+        zsh_content="PROMPT=\" %B%F{green}PS C:\\\\Users\\\\%n>%f%b \"\nclear\nneofetch --ascii_distro Windows11"
+        bash_content="PS1='\[\e[01;32m\]PS C:\\Users\\\\\u>\[\e[00m\] '\nclear\nneofetch --ascii_distro Windows11"
     elif [ "$os" == "athena" ]; then
         zsh_content="PROMPT=\" %B%F{magenta}┌──(%f%b%F{cyan} athena%f%b%F{magenta})-[%f%b%F{yellow}%~%f%b%B%F{magenta}]\n└─%f%b%B%F{green}λ%f%b \"\nclear\nneofetch --ascii_distro BlackArch"
-        bash_content="PS1='\\[\e[01;35m\\]┌──(\\[\e[01;36m\\] athena\\\[\e[01;35m\\])-[\\[\e[01;33m\\]\w\\\[\e[01;35m\\]]\n└─\\\[\e[01;32m\\]λ\\\[\e[00m\] '\nclear\nneofetch --ascii_distro BlackArch"
+        bash_content="PS1='\[\e[01;35m\]┌──(\[\e[01;36m\] athena\[\e[01;35m\])-[\[\e[01;33m\]\w\[\e[01;35m\]]\n└─\[\e[01;32m\]λ\[\e[00m\] '\nclear\nneofetch --ascii_distro BlackArch"
     elif [ "$os" == "arch" ]; then
         zsh_content="PROMPT=\" %B%F{cyan}[%n@archlinux %1~]%f%b$ \"\nclear\nneofetch --ascii_distro Arch"
-        bash_content="PS1='\\[\e[01;36m\\][\u@archlinux \W]\\[\e[00m\]$ '\nclear\nneofetch --ascii_distro Arch"
+        bash_content="PS1='\[\e[01;36m\][\u@archlinux \W]\[\e[00m\]$ '\nclear\nneofetch --ascii_distro Arch"
     elif [ "$os" == "kali" ]; then
         zsh_content="clear\nneofetch --ascii_distro Kali"
         bash_content="clear\nneofetch --ascii_distro Kali"
     fi
 
     if [ -n "$zsh_content" ] && [ -f "$rc_file" ]; then
-        echo -e "\n# --- KALI-SKIN START ---\n$zsh_content\n# --- KALI-SKIN END ---" >> "$rc_file"
+        echo "" >> "$rc_file"
+        cat << EOF >> "$rc_file"
+# --- KALI-SKIN START ---
+$zsh_content
+# --- KALI-SKIN END ---
+EOF
     fi
     if [ -n "$bash_content" ] && [ -f "$bash_rc" ]; then
-        echo -e "\n# --- KALI-SKIN START ---\n$bash_content\n# --- KALI-SKIN END ---" >> "$bash_rc"
+        echo "" >> "$bash_rc"
+        cat << EOF >> "$bash_rc"
+# --- KALI-SKIN START ---
+$bash_content
+# --- KALI-SKIN END ---
+EOF
     fi
 }
 
@@ -152,7 +165,11 @@ apply_xfce() {
 
     # Plank
     if [ "$use_plank" == "yes" ]; then
-        if ! pgrep-v -q "plank"; then
+        if command -v dconf &> /dev/null; then
+            dconf write /net/launchpad/plank/docks/dock1/position "'bottom'"
+            dconf write /net/launchpad/plank/docks/dock1/icon-size 32
+        fi
+        if ! pgrep -x "plank" > /dev/null; then
             plank &disown > /dev/null 2>&1
         fi
     else
