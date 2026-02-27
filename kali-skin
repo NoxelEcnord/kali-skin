@@ -23,8 +23,8 @@ setup_themes() {
     echo -e "\e[1;34m[*] Setting up themes, icons, and docks...\e[0m"
     mkdir -p ~/.themes ~/.icons ~/.wallpapers
     
-    echo "Installing required system packages (plank, arc-theme, etc.)..."
-    sudo apt-get update && sudo apt-get install -y arc-theme papirus-icon-theme plank curl git tar unzip
+    echo "Installing required system packages (plank, arc-theme, neofetch, etc.)..."
+    sudo apt-get update && sudo apt-get install -y arc-theme papirus-icon-theme plank curl git tar unzip neofetch
 
     # Mac Theme (WhiteSur)
     if [ ! -d "$HOME/.themes/WhiteSur-Dark" ]; then
@@ -73,9 +73,46 @@ setup_themes() {
     curl -sL -o ~/.wallpapers/mac.jpg "https://images.unsplash.com/photo-1610312278520-bcc893a3ff1d?q=80&w=1920&auto=format&fit=crop" || true
     curl -sL -o ~/.wallpapers/win11.jpg "https://images.unsplash.com/photo-1662955938837-1234190c7414?q=80&w=1920&auto=format&fit=crop" || true
     curl -sL -o ~/.wallpapers/athena.jpg "https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=1920&auto=format&fit=crop" || true
-    curl -sL -o ~/.wallpapers/arch.png "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Arch_Linux_%28dark_background%29.svg/1920px-Arch_Linux_%28dark_background%29.svg.png" || true
+    curl -sL -o ~/.wallpapers/arch.png "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1920&auto=format&fit=crop" || true
 
     echo -e "\e[1;32m[!] Setup complete! You can now run 'kali-skin win' or 'kali-skin mac' etc.\e[0m"
+}
+
+apply_shell() {
+    local os=$1
+    local rc_file="$HOME/.zshrc"
+    local bash_rc="$HOME/.bashrc"
+    
+    # Remove old blocks
+    sed -i '/# --- KALI-SKIN START ---/,/# --- KALI-SKIN END ---/d' "$rc_file" 2>/dev/null || true
+    sed -i '/# --- KALI-SKIN START ---/,/# --- KALI-SKIN END ---/d' "$bash_rc" 2>/dev/null || true
+
+    local zsh_content=""
+    local bash_content=""
+
+    if [ "$os" == "mac" ]; then
+        zsh_content="PROMPT=\" %B%F{green}%n@macbook%f%b:%B%F{blue}%~%f%b $ \"\nclear\nneofetch --ascii_distro Mac"
+        bash_content="PS1='\\[\e[01;32m\\]\u@macbook\\\[\e[00m\]:\\[\e[01;34m\\]\w\\\[\e[00m\] $ '\nclear\nneofetch --ascii_distro Mac"
+    elif [ "$os" == "win" ]; then
+        zsh_content="PROMPT=\" %B%F{green}PS C:\\\\Users\\%n>%f%b \"\nclear\nneofetch --ascii_distro Windows11"
+        bash_content="PS1='\\[\e[01;32m\\]PS C:\\\\Users\\\\\u>\\\[\e[00m\] '\nclear\nneofetch --ascii_distro Windows11"
+    elif [ "$os" == "athena" ]; then
+        zsh_content="PROMPT=\" %B%F{magenta}┌──(%f%b%F{cyan} athena%f%b%F{magenta})-[%f%b%F{yellow}%~%f%b%B%F{magenta}]\n└─%f%b%B%F{green}λ%f%b \"\nclear\nneofetch --ascii_distro BlackArch"
+        bash_content="PS1='\\[\e[01;35m\\]┌──(\\[\e[01;36m\\] athena\\\[\e[01;35m\\])-[\\[\e[01;33m\\]\w\\\[\e[01;35m\\]]\n└─\\\[\e[01;32m\\]λ\\\[\e[00m\] '\nclear\nneofetch --ascii_distro BlackArch"
+    elif [ "$os" == "arch" ]; then
+        zsh_content="PROMPT=\" %B%F{cyan}[%n@archlinux %1~]%f%b$ \"\nclear\nneofetch --ascii_distro Arch"
+        bash_content="PS1='\\[\e[01;36m\\][\u@archlinux \W]\\[\e[00m\]$ '\nclear\nneofetch --ascii_distro Arch"
+    elif [ "$os" == "kali" ]; then
+        zsh_content="clear\nneofetch --ascii_distro Kali"
+        bash_content="clear\nneofetch --ascii_distro Kali"
+    fi
+
+    if [ -n "$zsh_content" ] && [ -f "$rc_file" ]; then
+        echo -e "\n# --- KALI-SKIN START ---\n$zsh_content\n# --- KALI-SKIN END ---" >> "$rc_file"
+    fi
+    if [ -n "$bash_content" ] && [ -f "$bash_rc" ]; then
+        echo -e "\n# --- KALI-SKIN START ---\n$bash_content\n# --- KALI-SKIN END ---" >> "$bash_rc"
+    fi
 }
 
 apply_xfce() {
@@ -107,7 +144,7 @@ apply_xfce() {
     # Terminal themes (QTerminal)
     if [ -f "$HOME/.config/qterminal.org/qterminal.ini" ] && [ -n "$qterm_color" ]; then
         if grep -q "colorScheme=" "$HOME/.config/qterminal.org/qterminal.ini"; then
-            sed -i "s/colorScheme=.*/colorScheme=$qterm_color/g" "$HOME/.config/qterminal.org/qterminal.ini"
+            sed -i "s/colorScheme=. */colorScheme=$qterm_color/g" "$HOME/.config/qterminal.org/qterminal.ini"
         else
             sed -i "/\[General\]/a colorScheme=$qterm_color" "$HOME/.config/qterminal.org/qterminal.ini"
         fi
@@ -132,31 +169,36 @@ case "$MODE" in
         if [ "$VARIANT" == "--light" ] || [ "$VARIANT" == "light" ]; then GTK="WhiteSur-Light" && ICO="WhiteSur"; fi
         echo "Applying macOS Theme ($GTK)..."
         apply_xfce "$GTK" "$ICO" "$GTK" "$HOME/.wallpapers/mac.jpg" "WhiteOnBlack" "top" "yes"
-        echo "Done!"
+        apply_shell "mac"
+        echo "Done! Please open a new terminal."
         ;;
     win)
         GTK="Fluent-Dark" && ICO="Fluent-dark"
         if [ "$VARIANT" == "--light" ] || [ "$VARIANT" == "light" ]; then GTK="Fluent-Light" && ICO="Fluent"; fi
         echo "Applying Windows 11 Theme ($GTK)..."
         apply_xfce "$GTK" "$ICO" "$GTK" "$HOME/.wallpapers/win11.jpg" "WhiteOnBlack" "bottom" "no"
-        echo "Done!"
+        apply_shell "win"
+        echo "Done! Please open a new terminal."
         ;;
     athena)
         echo "Applying Athena OS Theme..."
         apply_xfce "Sweet-Dark" "candy-icons" "Sweet-Dark" "$HOME/.wallpapers/athena.jpg" "GreenOnBlack" "top" "no"
-        echo "Done!"
+        apply_shell "athena"
+        echo "Done! Please open a new terminal."
         ;;
     arch)
         echo "Applying Arch Linux Theme..."
         apply_xfce "Arc-Dark" "Papirus-Dark" "Arc-Dark" "$HOME/.wallpapers/arch.png" "SolarizedDark" "top" "no"
-        echo "Done!"
+        apply_shell "arch"
+        echo "Done! Please open a new terminal."
         ;;
     kali)
         echo "Applying default Kali Theme..."
         KALI_BG=$(find /usr/share/backgrounds/kali -type f -name '*default*' | head -n 1 2>/dev/null)
         if [ -z "$KALI_BG" ]; then KALI_BG="/usr/share/backgrounds/kali-16x9/default"; fi
-        apply_xfce "Kali-Dark" "Flat-Remix-Blue-Dark" "Kali-Dark" "$KALI_BG" "�ali" "top" "no"
-        echo "Done!"
+        apply_xfce "Kali-Dark" "Flat-Remix-Blue-Dark" "Kali-Dark" "$KALI_BG" "ali" "top" "no"
+        apply_shell "kali"
+        echo "Done! Please open a new terminal."
         ;;
     *)
         show_help
