@@ -1,0 +1,126 @@
+#!/bin/bash
+# kali-skin - A script to switch between 4 different desktop themes on XFCE (Kali Linux)
+# Developer: ecnord (GitHub: NoxelEcnord)
+
+MODE=$1
+
+show_help() {
+    echo -e "\e[1;36mKali-Skin Theme Switcher\e[0m"
+    echo "Usage: kali-skin [mode]"
+    echo ""
+    echo "Modes:"
+    echo "  mac      - macOS style theme"
+    echo "  athena   - Athena OS style theme (Cyberpunk)"
+    echo "  arch     - Arch Linux style theme"
+    echo "  kali     - Default Kali Linux cool setup"
+    echo "  setup    - Install all necessary themes (run this first!)"
+    echo ""
+}
+
+setup_themes() {
+    echo -e "\e[1;34m[*] Setting up themes. This will download files from github and debian repos...\e[0m"
+    mkdir -p ~/.themes ~/.icons ~/.wallpapers
+    
+    # Install Arch theme from repos (no custom repos)
+    if ! dpkg -l | grep -q arc-theme; then
+        echo "Installing Arc theme and Papirus icons from default repos. This might ask for sudo password."
+        sudo apt-get update && sudo apt-get install -y arc-theme papirus-icon-theme
+    fi
+
+    # Mac Theme (WhiteSur)
+    if [ ! -d "$HOME/.themes/WhiteSur-Dark" ]; then
+        echo -e "\e[1;32m[+] Downloading WhiteSur Mac Theme...\e[0m"
+        rm -rf /tmp/WhiteSur-gtk-theme
+        git clone --depth 1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/WhiteSur-gtk-theme
+        /tmp/WhiteSur-gtk-theme/install.sh -d ~/.themes -c Dark -t all -N glassy
+        rm -rf /tmp/WhiteSur-gtk-theme
+    fi
+    if [ ! -d "$HOME/.icons/WhiteSur-dark" ]; then
+        echo -e "\e[1;32m[+] Downloading WhiteSur Mac Icons...\e[0m"
+        rm -rf /tmp/WhiteSur-icon-theme
+        git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git /tmp/WhiteSur-icon-theme
+        /tmp/WhiteSur-icon-theme/install.sh -d ~/.icons -t all
+        rm -rf /tmp/WhiteSur-icon-theme
+    fi
+
+    # Athena Theme (Sweet-Dark / Candy-icons)
+    if [ ! -d "$HOME/.themes/Sweet-Dark" ]; then
+        echo -e "\e[1;32m[+] Downloading Sweet Theme for Athena look...\e[0m"
+        wget -qO /tmp/sweet.tar.xz "https://github.com/EliverLara/Sweet/releases/download/v4.0/Sweet-Dark.tar.xz"
+        tar -xf /tmp/sweet.tar.xz -C ~/.themes/
+        rm /tmp/sweet.tar.xz
+    fi
+    if [ ! -d "$HOME/.icons/candy-icons" ]; then
+        echo -e "\e[1;32m[+] Downloading Candy Icons for Athena look...\e[0m"
+        git clone --depth 1 https://github.com/EliverLara/candy-icons.git ~/.icons/candy-icons
+    fi
+
+    # Wallpapers
+    echo -e "\e[1;32m[+] Downloading Wallpapers...\e[0m"
+    wget -qO ~/.wallpapers/mac.jpg "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=1920&auto=format&fit=crop" || true
+    wget -qO ~/.wallpapers/athena.jpg "https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=1920&auto=format&fit=crop" || true
+    wget -qO ~/.wallpapers/arch.png "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Arch_Linux_%28dark_background%29.svg/1920px-Arch_Linux_%28dark_background%29.svg.png" || true
+
+    echo -e "\e[1;32m[!] Setup complete! You can now run 'kali-skin mac' or 'kali-skin athena' etc.\e[0m"
+}
+
+apply_xfce_theme() {
+    local gtk_theme=$1
+    local icon_theme=$2
+    local wm_theme=$3
+    local wallpaper=$4
+    local qterm_color=$5
+    
+    # Check if tools exist (like user is on XFCE)
+    if command -v xfconf-query &> /dev/null; then
+        # Ensure properties exist before setting, or create them
+        xfconf-query -c xsettings -p /Net/ThemeName -s "$gtk_theme" 2>/dev/null || xfconf-query -c xsettings -p /Net/ThemeName -n -t string -s "$gtk_theme"
+        xfconf-query -c xsettings -p /Net/IconThemeName -s "$icon_theme" 2>/dev/null || xfconf-query -c xsettings -p /Net/IconThemeName -n -t string -s "$icon_theme"
+        xfconf-query -c xfwm4 -p /general/theme -s "$wm_theme" 2>/dev/null || xfconf-query -c xfwm4 -p /general/theme -n -t string -s "$wm_theme"
+        
+        # Apply wallpaper
+        for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep "last-image"); do
+            xfconf-query -c xfce4-desktop -p "$p" -s "$wallpaper" 2>/dev/null
+        done
+    fi
+
+    # Terminal themes (QTerminal/XFCE4-Terminal)
+    if [ -f "$HOME/.config/qterminal.org/qterminal.ini" ] && [ -n "$qterm_color" ]; then
+        if grep -q "colorScheme=" "$HOME/.config/qterminal.org/qterminal.ini"; then
+            sed -i "s/colorScheme=.*/colorScheme=$qterm_color/g" "$HOME/.config/qterminal.org/qterminal.ini"
+        else
+            sed -i "/\[General\]/a colorScheme=$qterm_color" "$HOME/.config/qterminal.org/qterminal.ini"
+        fi
+    fi
+}
+
+case "$MODE" in
+    setup)
+        setup_themes
+        ;;
+    mac)
+        echo "Applying macOS Theme..."
+        apply_xfce_theme "WhiteSur-Dark" "WhiteSur-dark" "WhiteSur-Dark" "$HOME/.wallpapers/mac.jpg" "WhiteOnBlacl"
+        echo "Done! You may want to log out and log back in for full effects."
+        ;;
+    athena)
+        echo "Applying Athena OS Theme..."
+        apply_xfce_theme "Sweet-Dark" "candy-icons" "Sweet-Dark" "$HOME/.wallpapers/athena.jpg" "GreenOnBlack"
+        echo "Done! You may want to log out and log back in for full effects."
+        ;;
+    arch)
+        echo "Applying Arch Linux Theme..."
+        apply_xfce_theme "Arc-Dark" "Papirus-Dark" "Arc-Dark" "$HOME/.wallpapers/arch.png" "SolarizedDark"
+        echo "Done! You may want to log out and log back in for full effects."
+        ;;
+    kali)
+        echo "Applying default Kali Theme..."
+        KALI_BG=$(find /usr/share/backgrounds/kali -type f -name '*default*' | head -n 1)
+        if [ -z "$KALI_BG" ]; then KALI_BG="/usr/share/backgrounds/kali-16x9/default"; fi
+        apply_xfce_theme "Kali-Dark" "Flat-Remix-Blue-Dark" "Kali-Dark" "$KALI_BG" "Kali"
+        echo "Done! You may want to log out and log back in for full effects."
+        ;;
+    *)
+        show_help
+        ;;
+esac
