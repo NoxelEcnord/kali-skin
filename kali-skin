@@ -61,7 +61,7 @@ setup_themes() {
     # Athena Theme (Sweet-Dark / Candy-icons)
     if [ ! -d "$HOME/.themes/Sweet-Dark" ]; then
         echo -e "\e[1;32m[+] Downloading Sweet Theme for Athena...\e[0m"
-        curl -sL "https://github.com/EliverLara/Sweet/releases/download/v4.0/Sweet-Dark.tar.xz" | tar -xJ -C ~/.themes/
+        curl -sL "https://github.com/EliverLara/Sweet/releases/download/v6.0/Sweet-Dark.tar.xz" | tar -xJ -C ~/.themes/
     fi
     if [ ! -d "$HOME/.icons/candy-icons" ]; then
         echo -e "\e[1;32m[+] Downloading Candy Icons...\e[0m"
@@ -155,7 +155,7 @@ case "$MODE" in
         echo "Applying default Kali Theme..."
         KALI_BG=$(find /usr/share/backgrounds/kali -type f -name '*default*' | head -n 1 2>/dev/null)
         if [ -z "$KALI_BG" ]; then KALI_BG="/usr/share/backgrounds/kali-16x9/default"; fi
-        apply_xfce "Kali-Dark" "Flat-Remix-Blue-Dark" "Kali-Dark" "$KALI_BG" "Øali" "top" "no"
+        apply_xfce "Kali-Dark" "Flat-Remix-Blue-Dark" "Kali-Dark" "$KALI_BG" "ï¿½ali" "top" "no"
         echo "Done!"
         ;;
     *)
